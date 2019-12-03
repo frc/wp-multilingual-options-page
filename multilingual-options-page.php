@@ -17,24 +17,20 @@ class FrcMultilingualOptionsPage {
     protected $plugin_dir = '';
     protected $plugin_url = '';
     protected $plugin_name = '';
-    private static $plugin_textdomain = 'frc-multilingual-options-page';
-    private static $options_pages = [];
+    private $plugin_textdomain = 'frc-multilingual-options-page';
+    private $options_pages = [];
 
     public function __construct() {
         $this->plugin_dir  = untrailingslashit( plugin_dir_path(__FILE__));
         $this->plugin_url  = plugin_dir_url(__FILE__);
         $this->plugin_name = plugin_basename(__FILE__);
 
-        register_activation_hook($this->plugin_name, [$this, 'activate']);
-        register_deactivation_hook($this->plugin_name, [$this, 'deactivate']);
-        register_uninstall_hook($this->plugin_name, [__CLASS__, 'uninstall']);
+        load_plugin_textdomain($this->plugin_textdomain, false, basename(dirname(__FILE__)) . '/languages');
+
+        add_filter('acf/location/rule_types', [$this, 'acf_location_rule_type']);
+        add_filter('acf/location/rule_values/multilingual_options_page', [$this, 'acf_location_rules_values']);
+        add_filter('acf/location/rule_match/multilingual_options_page', [$this, 'acf_location_rules_match'], 10, 3);
     }
-
-    public function activate() { }
-
-    public function deactivate() { }
-
-    public function uninstall() { }
 
     public static function get_instance() {
         if (null === self::$instance) {
@@ -44,11 +40,7 @@ class FrcMultilingualOptionsPage {
         return self::$instance;
     }
 
-    public function init() {
-        load_plugin_textdomain($this->plugin_textdomain, false, basename(dirname(__FILE__)) . '/languages');
-    }
-
-    private static function check_for_active_plugins() {
+    private function check_for_active_plugins() {
         $network_active_plugins = is_multisite() ? array_keys(get_site_option('active_sitewide_plugins')) : [];
         $active_plugins = array_merge(get_option('active_plugins'), $network_active_plugins);
 
@@ -57,14 +49,14 @@ class FrcMultilingualOptionsPage {
         return in_array($acf_pro, $active_plugins);
     }
 
-    public static function add_page($title, $parent_slug) {
-        if (!self::check_for_active_plugins() || !function_exists('acf_add_options_sub_page')) {
+    public function add_page($title, $parent_slug) {
+        if (!$this->check_for_active_plugins() || !function_exists('acf_add_options_sub_page')) {
             return false;
         }
 
         $langs = function_exists('pll_languages_list') ? pll_languages_list() : [substr(get_locale(), 0, 2)];
 
-        self::$options_pages[$parent_slug . '_page_acf-options-' . sanitize_title($title)] = $title;
+        $this->options_pages[$parent_slug . '_page_acf-options-' . sanitize_title($title)] = $title;
 
         foreach ($langs as $lang) {
             acf_add_options_sub_page([
@@ -73,23 +65,19 @@ class FrcMultilingualOptionsPage {
                 'post_id'       => 'options-' . $lang,
             ]);
         }
-
-        add_filter('acf/location/rule_types', [__CLASS__, 'acf_location_rule_type']);
-        add_filter('acf/location/rule_values/multilingual_options_page', [__CLASS__, 'acf_location_rules_values']);
-        add_filter('acf/location/rule_match/multilingual_options_page', [__CLASS__, 'acf_location_rules_match'], 10, 3);
     }
 
-    public static function acf_location_rule_type($choices) {
-        $choices['Forms']['multilingual_options_page'] = __('Multilingual Options Page', self::$plugin_textdomain);
+    public function acf_location_rule_type($choices) {
+        $choices['Forms']['multilingual_options_page'] = __('Multilingual Options Page', $this->plugin_textdomain);
 
         return $choices;
     }
 
-    public static function acf_location_rules_values($choices) {
-        return self::$options_pages;
+    public function acf_location_rules_values($choices) {
+        return $this->options_pages;
     }
 
-    public static function acf_location_rules_match($match, $rule, $options) {
+    public function acf_location_rules_match($match, $rule, $options) {
         $selected_options_page = $rule['value'];
         $current_screen_id = get_current_screen()->id;
 
