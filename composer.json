@@ -1,0 +1,16 @@
+{
+    "name": "frc/wp-multilingual-options-page",
+    "authors": [
+      {
+        "name": "Sanna Nygård",
+        "email": "sanna.nygard@frantic.com"
+      }
+    ],
+    "license": "MIT",
+    "description": "Create ACF Options Pages for all languages",
+    "type": "wordpress-plugin",
+    "repositories": [
+    ],
+    "require": {
+    }
+  }
