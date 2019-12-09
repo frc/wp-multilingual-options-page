@@ -79,6 +79,12 @@ class FrcMultilingualOptionsPage {
 
     public function acf_location_rules_match($match, $rule, $options) {
         $selected_options_page = $rule['value'];
+        $current_screen = get_current_screen();
+
+        if (empty($current_screen)) {
+            return;
+        }
+
         $current_screen_id = get_current_screen()->id;
 
         if ($rule['operator'] == "==") {
